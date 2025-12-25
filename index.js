@@ -5,46 +5,52 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 
+// App ko lagna chahiye ki response turant mila (Timeout bypass)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const MY_ADMIN_KEY = "papiatma009"; // Aapki Login Key
+// Sabse Zaroori: Har request ko 200 OK aur "true" dena
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
 
-// 1. LOGIN API - Iska response format fix kiya hai
+const MY_ADMIN_KEY = "123456"; // Aapki login key
+
+// 1. Login/Register Handler
 app.post('/register', (req, res) => {
     const userKey = req.body.key;
     if (userKey === MY_ADMIN_KEY) {
         res.status(200).json({
-            status: "true",  // Kuch apps "true" string dhoondti hain
+            status: "true", 
             success: true,
-            deviceid: "LITERA-" + Math.floor(1000 + Math.random() * 9000),
-            message: "Authorized"
+            deviceid: "LITERA-" + Math.floor(Math.random() * 9999)
         });
     } else {
         res.status(200).json({ status: "false", message: "Invalid key" });
     }
 });
 
-// 2. SMS SEND API - Yahan se recharge error bypass hoga
+// 2. SMS Send Handler (Bypass Recharge Error)
+// Smali code mein .optString("status", "false") hai, isliye hum "true" bhejenge
 app.post('/send', (req, res) => {
-    console.log('SMS Data Received:', req.body);
+    console.log('\n[!] SMS Data Received:', req.body);
     
-    // Sabse zaroori: App ko lagna chahiye ki SMS sach mein deliver ho gaya
-    // Status code 200 aur body mein status "true" dena zaroori hai
-    res.status(200).send({
+    // App ko ye format chahiye taaki wo "Recharge" check bypass kare
+    res.status(200).json({
         status: "true",
         success: true,
-        code: 200,
-        message: "SMS_SENT_SUCCESSFULLY"
+        message: "delivered"
     });
 });
 
-// 3. Catch-all Route (Agar app kisi aur link par jaye)
+// 3. Catch-all: Agar app kisi aur endpoint par hit kare
 app.all('*', (req, res) => {
-    res.status(200).json({ status: "true", success: true });
+    res.status(200).json({ status: "true" });
 });
 
-// Socket.io Setup
+// Socket.io for HttpServerService
 const io = new Server(server, {
     cors: { origin: "*" },
     transports: ['websocket', 'polling']
@@ -58,5 +64,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server fix ho gaya hai! Port: ${PORT}`);
+    console.log(`Bypass Server Live on Port ${PORT}`);
 });
