@@ -20,7 +20,7 @@ app.post('/register', (req, res) => {
         success: true,
         deviceid: "LITERA-" + Math.floor(Math.random() * 9999),
         // Agar app number mang rahi hai, toh wahi number wapas bhejo jo req mein aaya
-        mobile: req.body.mobile || "918879975550", 
+        mobile: req.body.mobile || "919836709756", 
         token: "VALID_TOKEN_123"
     });
 });
@@ -44,7 +44,7 @@ app.all('*', (req, res) => {
     res.status(200).json({
         status: "true",
         success: true,
-        mobile: "918879975550"
+        mobile: "919836709756"
     });
 });
 
