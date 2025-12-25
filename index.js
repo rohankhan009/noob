@@ -16,7 +16,7 @@ app.use((req, res, next) => {
     next();
 });
 
-const MY_ADMIN_KEY = "123456"; // Aapki login key
+const MY_ADMIN_KEY = "papiatma12"; // Aapki login key
 
 // 1. Login/Register Handler
 app.post('/register', (req, res) => {
