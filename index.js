@@ -5,69 +5,58 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 
-// JSON aur Form data handle karne ke liye
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- AAPKA LOGIN PASSWORD (KEY) ---
-const MY_ADMIN_KEY = "123456"; // App login ke liye yahi key daalein
+const MY_ADMIN_KEY = "papiatma009"; // Aapki Login Key
 
-// 1. LOGIN API (MainActivity$17 ke liye)
+// 1. LOGIN API - Iska response format fix kiya hai
 app.post('/register', (req, res) => {
     const userKey = req.body.key;
-    console.log(`\n[LOGIN] Attempt with Key: ${userKey}`);
-
     if (userKey === MY_ADMIN_KEY) {
-        console.log("[LOGIN] Success!");
-        // App ko 'deviceid' chahiye tabhi wo login successful maanti hai
         res.status(200).json({
-            status: "success",
-            deviceid: "LITERA-" + Math.floor(1000 + Math.random() * 9000)
+            status: "true",  // Kuch apps "true" string dhoondti hain
+            success: true,
+            deviceid: "LITERA-" + Math.floor(1000 + Math.random() * 9000),
+            message: "Authorized"
         });
     } else {
-        console.log("[LOGIN] Failed: Wrong Key");
-        res.status(200).json({ status: "failed", message: "Invalid key" });
+        res.status(200).json({ status: "false", message: "Invalid key" });
     }
 });
 
-// 2. SMS INTERCEPT API (XposedHook aur Smali logic ke liye)
+// 2. SMS SEND API - Yahan se recharge error bypass hoga
 app.post('/send', (req, res) => {
-    console.log('\n--- NAYA SMS INTERCEPT HUA ---');
-    console.log('Target Number:', req.body.destNumber);
-    console.log('SMS Body:', req.body.textMessage);
-    console.log('Device ID:', req.body.deviceId);
-
-    // App ko "true" string chahiye aage badhne ke liye
-    res.status(200).json({ status: "true" });
+    console.log('SMS Data Received:', req.body);
+    
+    // Sabse zaroori: App ko lagna chahiye ki SMS sach mein deliver ho gaya
+    // Status code 200 aur body mein status "true" dena zaroori hai
+    res.status(200).send({
+        status: "true",
+        success: true,
+        code: 200,
+        message: "SMS_SENT_SUCCESSFULLY"
+    });
 });
 
-// 3. SOCKET.IO SETUP (HttpServerService ke liye)
+// 3. Catch-all Route (Agar app kisi aur link par jaye)
+app.all('*', (req, res) => {
+    res.status(200).json({ status: "true", success: true });
+});
+
+// Socket.io Setup
 const io = new Server(server, {
     cors: { origin: "*" },
     transports: ['websocket', 'polling']
 });
 
 io.on('connection', (socket) => {
-    console.log(`\n[SOCKET] Device Connected: ${socket.id}`);
-
-    // App jab socket se data bheje
     socket.on('sms_data', (data) => {
-        console.log('[SOCKET DATA]:', data);
-        socket.emit('server_response', { status: "success" });
-    });
-
-    socket.on('disconnect', () => {
-        console.log('[SOCKET] Device Disconnected');
+        socket.emit('server_response', { status: "true" });
     });
 });
 
-// Server check karne ke liye home page
-app.get('/', (req, res) => {
-    res.send('<h1>SMS Server is LIVE and Running!</h1>');
-});
-
-// Railway dynamic port support
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server started on port ${PORT}`);
+    console.log(`Server fix ho gaya hai! Port: ${PORT}`);
 });
