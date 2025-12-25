@@ -5,64 +5,50 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 
-// App ko lagna chahiye ki response turant mila (Timeout bypass)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Sabse Zaroori: Har request ko 200 OK aur "true" dena
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-});
+const MY_ADMIN_KEY = "123456"; 
 
-const MY_ADMIN_KEY = "papiatma12"; // Aapki login key
-
-// 1. Login/Register Handler
+// 1. REGISTER / LOGIN - Yahan hum matching number bhejenge
 app.post('/register', (req, res) => {
-    const userKey = req.body.key;
-    if (userKey === MY_ADMIN_KEY) {
-        res.status(200).json({
-            status: "true", 
-            success: true,
-            deviceid: "LITERA-" + Math.floor(Math.random() * 9999)
-        });
-    } else {
-        res.status(200).json({ status: "false", message: "Invalid key" });
-    }
-});
-
-// 2. SMS Send Handler (Bypass Recharge Error)
-// Smali code mein .optString("status", "false") hai, isliye hum "true" bhejenge
-app.post('/send', (req, res) => {
-    console.log('\n[!] SMS Data Received:', req.body);
+    console.log('Login attempt:', req.body);
     
-    // App ko ye format chahiye taaki wo "Recharge" check bypass kare
+    // App ko ye fields chahiye mismatch hatane ke liye
     res.status(200).json({
         status: "true",
         success: true,
-        message: "delivered"
+        deviceid: "LITERA-" + Math.floor(Math.random() * 9999),
+        // Agar app number mang rahi hai, toh wahi number wapas bhejo jo req mein aaya
+        mobile: req.body.mobile || "918879975550", 
+        token: "VALID_TOKEN_123"
     });
 });
 
-// 3. Catch-all: Agar app kisi aur endpoint par hit kare
+// 2. SEND / SMS INTERCEPT - Sabse bada fix yahi hai
+app.post('/send', (req, res) => {
+    console.log('SMS Data:', req.body);
+
+    // Mismatch error bypass karne ke liye hum wahi number bhej rahe hain jo image mein hai
+    res.status(200).json({
+        status: "true",
+        success: true,
+        message: "delivered",
+        server_token_mobile: req.body.destNumber || "918879975550", // Matching number
+        longcode_service_mobile: req.body.destNumber || "918879975550" // Matching number
+    });
+});
+
+// 3. Catch-all Fix
 app.all('*', (req, res) => {
-    res.status(200).json({ status: "true" });
-});
-
-// Socket.io for HttpServerService
-const io = new Server(server, {
-    cors: { origin: "*" },
-    transports: ['websocket', 'polling']
-});
-
-io.on('connection', (socket) => {
-    socket.on('sms_data', (data) => {
-        socket.emit('server_response', { status: "true" });
+    res.status(200).json({
+        status: "true",
+        success: true,
+        mobile: "918879975550"
     });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Bypass Server Live on Port ${PORT}`);
+    console.log(`Mismatch Bypass Server Live!`);
 });
