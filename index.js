@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // --- Admin Configuration ---
-const MY_ADMIN_KEY = "krishna@124098865"; // App login ke liye yahi use karein
+const MY_ADMIN_KEY = "gamerkonsarajputhai@12"; // App login ke liye yahi use karein
 
 // 1. REGISTER / LOGIN ENDPOINT
 app.post('/register', (req, res) => {
